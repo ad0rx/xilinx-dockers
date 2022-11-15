@@ -1,0 +1,104 @@
+#+TITLE:Docker Notes
+
+* Commands
+
+** Commit
+commit the container to the image repo
+
+docker commit --message "" container repo:tag
+
+** Save
+Create a tar.gz of an image for archiving
+
+docker save myimage:latest | gzip > myimage_latest.tar.gz
+
+** Rename Image
+
+docker image tag d583c3ac45fd myname/server:latest
+
+* X11 App on Windows from Docker Container
+
+** Linux Host
+
+run the container and make sure --expose 22 is in the run
+command. This makes port 22 available in the container
+
+docker exec -u 0 -it <container> bash
+
+apt update
+apt install openssh-server
+apt install iproute2
+service ssh start
+
+passwd <USER>
+
+Get IP address of the container
+ip addr | grep global
+
+I've run these steps and commited
+
+*** Thougths
+
+Not sure I'm understanding what is happenning.
+
+I can eliminate the second PuTTY session to the docker container and
+get this to work through the original PuTTY window. Not sure if the
+port forwarding is in effect.
+
+yes it must be in effect
+
+plap > ssh -XY localhost xterm
+
+that works, and so does Vivado. Pretty sweet.
+
+** Windows Machine
+install VcXsrv
+
+start Xsrv on laptop
+once container running
+putty to plap and forward L2022 on win host to <docker_ip>:22
+putty to docker container localhost:2022, enable X11 forwarding
+ this will connect to port 22 on docker container
+
+other ways to connect are available but have an issue with locale that
+i dont understand.
+
+with both machines on the local network, this is a useable solution
+
+I'd like to experiment with xpra on dkr
+ok, installed xpra into dkr
+
+alternative connection
+once first putty setup from laptop to plap, no 2022 forward needed
+plap > ssh -XC 172.17.0.1
+dkr  > source ... && vivado
+
+*** Xpra
+
+# > mkdir -p /run/user/1000
+# > chown bwhitlock:bwhitlock !$
+# > mkdir /run/xpra/system
+# > chmod -R 777 /run/xpra
+
+start xpra in container as user
+ dkr>  xpra start --desktop-scaling=no --start=xterm
+
+with forwarding as before, connect using xrpa from laptop
+ localhost:2022
+works well, more responsive than ssh alone
+commited dkr
+when ready to disconnect, in xterm window
+ > xpra detach
+ this will keep the xterm process running for next connection session
+
+ seems to be an issue with mouse offset, maybe related to scaling,
+ more experimentation and googling require.
+ in order to select things on the right side of a window, move the
+ window to the left side of the monitor
+ look into Xorg dummy package
+ this works pretty well:
+  xpra start-desktop --terminate-children=yes \
+   --desktop-scaling=yes --start=fluxbox  --start=xterm
+
+   xpra start-desktop --terminate-children=yes --desktop-scaling=yes \
+   --start-child=fluxbox --start-child=xterm --exit-with-children
