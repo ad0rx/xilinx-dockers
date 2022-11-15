@@ -102,22 +102,37 @@ when ready to disconnect, in xterm window
 
    xpra start-desktop --terminate-children=yes --desktop-scaling=yes \
    --start-child=fluxbox --start-child=xterm --exit-with-children
-* Vivado 2022.2 Notes
 
-** Vivado 20222.2 Tasks
+* Ideas for Next Implementation
 
-*** TODO Disable XIC
+  - User separation
+    - create a user name in the container that is not linked to local
+      machine user
+    - mount local machine user home dir in /projects or similar
+    - this would separate the container's home dir from local user and
+      prevent pollution ~/.local on the local machine
+  - Autoinstalls
+    - perhaps mount a virtual mount point during build to access
+      ws_tester and Xilinx install files
+
+* Vivado 20222.2 Tasks
+
+** TODO Disable XIC
     SCHEDULED: <2022-11-15 Tue>
 
     - Xilinx Information Center
 
-*** TODO Autoinstall ws_tester
+** TODO Autoinstall ws_tester
     SCHEDULED: <2022-11-15 Tue>
 
     - hc_attack
     - testing-framework
 
-*** TODO Autoinstall Vivado
+
+    - How to mount local share during image build?
+      -
+
+** TODO Autoinstall Vivado
     SCHEDULED: <2022-11-15 Tue>
 
     - need automation files
