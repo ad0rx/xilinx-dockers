@@ -107,7 +107,7 @@ RUN locale-gen en_US.UTF-8
 RUN apt-get update &&     \
     apt-get upgrade &&    \
     apt-get install -y    \
-            python3       \
+            python3.8     \
             python3-dev   \
             python3-numpy \
             python3-scipy \
@@ -115,13 +115,24 @@ RUN apt-get update &&     \
         &&                \
         rm -rf /var/lib/apt/lists/*
 
-# End ws_tester support ###############################################
+# This dir is used to store the required repos hc-attack and
+# testing-framework. Files are copied into this dir by the top-level
+# script which executes after the container is up and running
+RUN mkdir -p /ws_tester && \
+    chown -R $UID:$GID /ws_tester
 
 # Set the username for running the following commands
 USER $UNAME
 ENV PATH $PATH:/home/$UNAME/.local/bin
-RUN python3 -m pip install --upgrade \
-    pip setuptools wheel scipy cython pybind11
+RUN python3.8 -m pip install --upgrade pip && \
+    python3.8 -m pip install --upgrade        \
+    setuptools wheel &&                       \
+    python3.8 -m pip install --upgrade        \
+    cython pybind11 scipy numpy
+
+# End ws_tester support ###############################################
+
+USER $UNAME
 
 # Set environment variables.
 ENV HOME $UHOME
