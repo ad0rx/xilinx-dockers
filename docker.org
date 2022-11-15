@@ -102,3 +102,22 @@ when ready to disconnect, in xterm window
 
    xpra start-desktop --terminate-children=yes --desktop-scaling=yes \
    --start-child=fluxbox --start-child=xterm --exit-with-children
+* Vivado 2022.2 Notes
+
+** Vivado 20222.2 Tasks
+
+*** TODO Disable XIC
+    SCHEDULED: <2022-11-15 Tue>
+
+    - Xilinx Information Center
+
+*** TODO Autoinstall ws_tester
+    SCHEDULED: <2022-11-15 Tue>
+
+    - hc_attack
+    - testing-framework
+
+*** TODO Autoinstall Vivado
+    SCHEDULED: <2022-11-15 Tue>
+
+    - need automation files

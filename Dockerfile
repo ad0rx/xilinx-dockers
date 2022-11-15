@@ -42,15 +42,19 @@ ARG GID=1000
 ARG UHOME=/home/$UNAME
 #ENV LANG zh_TW.UTF-8
 RUN groupadd -g $GID -o $UNAME
-RUN useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME
+RUN useradd  -m -u $UID -g $GID -o -s /bin/bash $UNAME
 
-# Install.
+# Base Updates
 RUN apt-get clean
 RUN apt-get update
 RUN apt-get -y upgrade
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN apt-get -y upgrade && apt-get install -y -q
-RUN apt-get -y upgrade &&           \
+# End Base Updates ####################################################
+
+# Begin deps for Xilinx Vivado
+RUN apt-get update &&               \
+    apt-get -y upgrade &&           \
     apt-get install -y              \
             dialog apt-utils        \
             libboost-filesystem-dev \
@@ -82,16 +86,26 @@ RUN apt-get -y upgrade &&           \
             git                     \
             strace                  \
             wget                    \
-            unzip
+            unzip                   \
+            locales
 
 #RUN apt-get upgrade && apt-get install -y libasound2
-#                                   liboss4-salsa-asound2 \
+# liboss4-salsa-asound2 \
 
-# to get python 3.10 available
+# END Vivado Dependencies #############################################
+
+# Begin conguration for Vivado
+RUN locale-gen en_US.UTF-8
+
+# End Vivado Configurations ###########################################
+
+# Begin Python support for ws_tester
+
+# make python 3.10 available
 #RUN add-apt-repository ppa:deadsnakes/ppa
 #RUN apt-get upgrade && apt-get install -y software-properties-common
-
-RUN apt-get upgrade &&    \
+RUN apt-get update &&     \
+    apt-get upgrade &&    \
     apt-get install -y    \
             python3       \
             python3-dev   \
@@ -100,6 +114,8 @@ RUN apt-get upgrade &&    \
             python3-pip   \
         &&                \
         rm -rf /var/lib/apt/lists/*
+
+# End ws_tester support ###############################################
 
 # Set the username for running the following commands
 USER $UNAME
@@ -112,8 +128,6 @@ ENV HOME $UHOME
 
 # Define working directory.
 WORKDIR $UHOME
-
-# Install ws_tester.py
 
 # Define default command.
 CMD ["bash"]
