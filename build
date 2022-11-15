@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+#
+# New flow for building the base image for Bus Defender. You end up
+# with a running container which has ws_tester.py installed and is
+# runnable.
+#######################################################################
+
+# Exit on error
+set -e
+
+NETWORK=none
+
+IMAGE_NAME="test:002"
+CONTAINER_NAME="test-002-${NETWORK}"
+
+function build_image () {
+
+    # Build the image
+    DOCKER_BUILDKIT=1 docker build  \
+                   --tag ${IMAGE_NAME}      \
+                   --build-arg UNAME=$USER  \
+                   --ssh default            \
+                   --build-arg UID=$(id -u) \
+                   --build-arg GID=$(id -g) \
+                   - < Dockerfile
+
+}
+
+function run_container () {
+
+    # Capture output here, which contains the container ID
+    OUTFILE=/tmp/run.sh.test.out
+
+    NETWORK=none
+    CPU_SHARES=1024
+    if [ -n "$1" ]
+    then
+
+        NETWORK=host
+        echo "Setting NETWORK=$NETWORK"
+
+        #CPU_SHARES=128
+        #echo "Setting CPU_SHARES=$CPU_SHARES"
+
+    fi
+
+    # Run the image / create container
+    # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+    # -v /home:/home                                   \
+    docker run -itd --hostname=dkr --env DISPLAY=:0.0       \
+           --privileged                                     \
+           --network=${NETWORK}                             \
+           -e HOME=${HOME} -w ${HOME}                       \
+           -v /tmp/.X11-unix:/tmp/.X11-unix                 \
+           --mount type=bind,src=/mnt/BACKUP/archive/,dst=/support \
+           --rm --cpu-shares=${CPU_SHARES}                  \
+           --cpus=6                                         \
+           --name ${CONTAINER_NAME}                         \
+           ${IMAGE_NAME}                                    \
+        | tee ${OUTFILE}
+
+    # Start the SSH server in the container, using the root user
+    #ID=`cat ${OUTFILE}`
+    #docker exec -it -u0 ${ID} service ssh start | tee -a ${OUTFILE}
+    rm -f ${OUTFILE}
+
+}
+
+function add_ws_tester () {
+
+    # Copy files from the local machines file system into the docker
+    # container
+    docker cp /home/brad/Downloads/hc-attack-hardcider-2018.zip ${CONTAINER_NAME}:/ws_tester/
+    docker cp /home/brad/Downloads/testing-framework-master.zip ${CONTAINER_NAME}:/ws_tester/
+
+    # Unzip the repos
+    docker exec -it -w /ws_tester ${CONTAINER_NAME} unzip *zip
+
+    # Install hc-attack
+    docker exec -it -w /ws_tester/hc-attack-hardcider-2018 ${CONTAINER_NAME} python3.8 -m pip install --user .
+
+    # Install testing-framework
+    docker exec -it -w /ws_tester/testing-framework-master ${CONTAINER_NAME} python3.8 -m pip install --user .
+
+}
+
+#
+build_image
+run_container host
+add_ws_tester
