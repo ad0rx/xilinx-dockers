@@ -8,15 +8,26 @@
 # Exit on error
 set -e
 
-NETWORK=none
+NETWORK="none"
 
 IMAGE_NAME="test:002"
 CONTAINER_NAME="test-002-${NETWORK}"
 
+HC_ATTACK_ZIP="/home/brad/Downloads/hc-attack-hardcider-2018.zip"
+TESTING_FRAMEWORK_ZIP="/home/brad/Downloads/testing-framework-master.zip"
+
+# Path on local machine to the extracted vivado unified installer
+# This path will be mounted to /vivado_extracted inside the container
+VIVADO_EXTRACTED="/mnt/BACKUP/archive/xilinx/Xilinx_Unified_2022.2_1014_8888"
+
+# Path on local machine to where projects root
+PROJECTS_PATH="/home/brad/projects"
+
 function build_image () {
 
     # Build the image
-    DOCKER_BUILDKIT=1 docker build  \
+    DOCKER_BUILDKIT=1                       \
+                   docker build             \
                    --tag ${IMAGE_NAME}      \
                    --build-arg UNAME=$USER  \
                    --ssh default            \
@@ -52,26 +63,23 @@ function run_container () {
            --network=${NETWORK}                             \
            -e HOME=${HOME} -w ${HOME}                       \
            -v /tmp/.X11-unix:/tmp/.X11-unix                 \
-           --mount type=bind,src=/mnt/BACKUP/archive/,dst=/support \
+           --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted \
+           --mount type=bind,src=${PROJECTS_PATH},dst=/projects            \
            --rm --cpu-shares=${CPU_SHARES}                  \
            --cpus=6                                         \
            --name ${CONTAINER_NAME}                         \
-           ${IMAGE_NAME}                                    \
-        | tee ${OUTFILE}
-
-    # Start the SSH server in the container, using the root user
-    #ID=`cat ${OUTFILE}`
-    #docker exec -it -u0 ${ID} service ssh start | tee -a ${OUTFILE}
-    rm -f ${OUTFILE}
+           ${IMAGE_NAME}
 
 }
 
+# Be careful of modding this function because it has to play nice with
+# the ws_tester section in the Dockerfile
 function add_ws_tester () {
 
     # Copy files from the local machines file system into the docker
     # container
-    docker cp /home/brad/Downloads/hc-attack-hardcider-2018.zip ${CONTAINER_NAME}:/ws_tester/
-    docker cp /home/brad/Downloads/testing-framework-master.zip ${CONTAINER_NAME}:/ws_tester/
+    docker cp ${HC_ATTACK_ZIP}         ${CONTAINER_NAME}:/ws_tester/
+    docker cp ${TESTING_FRAMEWORK_ZIP} ${CONTAINER_NAME}:/ws_tester/
 
     # Unzip the repos
     docker exec -it -w /ws_tester ${CONTAINER_NAME} unzip *zip
@@ -84,7 +92,29 @@ function add_ws_tester () {
 
 }
 
+function add_vivado () {
+
+    # Allow root@dkr to make windows in local user's window manager
+    xhost +
+    docker exec -it -u0 -w           \
+           /vivado_extracted         \
+           ${CONTAINER_NAME} xsetup
+
+}
+
+function add_rcfiles () {
+
+    docker exec -it ${CONTAINER_NAME} bash -c '
+            git clone https://github.com/ad0rx/rcfiles.git;
+            for f in .bashrc .screenrc ; do ln -vfs rcfiles/$f $f; done;
+            pwd'
+
+}
+
+
 #
 build_image
 run_container host
 add_ws_tester
+#add_vivado
+add_rcfiles
