@@ -132,6 +132,10 @@ RUN python3.8 -m pip install --upgrade pip && \
 
 # End ws_tester support ###############################################
 
+USER root
+COPY support/bashrc /home/$UNAME/.bashrc
+RUN chown $UNAME:$UNAME /home/$UNAME/.bashrc
+
 USER $UNAME
 
 # Set environment variables.

@@ -13,6 +13,7 @@ NETWORK="none"
 IMAGE_NAME="test:002"
 CONTAINER_NAME="test-002-${NETWORK}"
 
+# ws_tester support
 HC_ATTACK_ZIP="/home/brad/Downloads/hc-attack-hardcider-2018.zip"
 TESTING_FRAMEWORK_ZIP="/home/brad/Downloads/testing-framework-master.zip"
 
@@ -20,7 +21,10 @@ TESTING_FRAMEWORK_ZIP="/home/brad/Downloads/testing-framework-master.zip"
 # This path will be mounted to /vivado_extracted inside the container
 VIVADO_EXTRACTED="/mnt/BACKUP/archive/xilinx/Xilinx_Unified_2022.2_1014_8888"
 
-# Path on local machine to where projects root
+XILINX_INSTALL_DIR="/mnt/BACKUP/xilinx_docker_installs"
+
+# Path on local machine to where projects root. Will be mounted to
+# /projects in container
 PROJECTS_PATH="/home/brad/projects"
 
 function build_image () {
@@ -33,10 +37,12 @@ function build_image () {
                    --ssh default            \
                    --build-arg UID=$(id -u) \
                    --build-arg GID=$(id -g) \
-                   - < Dockerfile
+                   -f Dockerfile .
 
 }
 
+# if this script is invoked with any argument, you get network=host,
+# otherwise no network
 function run_container () {
 
     # Capture output here, which contains the container ID
@@ -55,20 +61,24 @@ function run_container () {
 
     fi
 
-    # Run the image / create container
-    # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
-    # -v /home:/home                                   \
-    docker run -itd --hostname=dkr --env DISPLAY=:0.0       \
-           --privileged                                     \
-           --network=${NETWORK}                             \
-           -e HOME=${HOME} -w ${HOME}                       \
-           -v /tmp/.X11-unix:/tmp/.X11-unix                 \
-           --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted \
-           --mount type=bind,src=${PROJECTS_PATH},dst=/projects            \
-           --rm --cpu-shares=${CPU_SHARES}                  \
-           --cpus=6                                         \
-           --name ${CONTAINER_NAME}                         \
-           ${IMAGE_NAME}
+    mkdir -p ${XILINX_INSTALL_DIR} &&
+        chmod -R 777 ${XILINX_INSTALL_DIR}
+
+        # Run the image / create container
+        # -v /home:/home                                        \
+            docker run -itd --hostname=dkr --env DISPLAY=:0.0       \
+                   --privileged                                     \
+                   --network=${NETWORK}                             \
+                   -e HOME=${HOME} -w ${HOME}                       \
+                   -v /tmp/.X11-unix:/tmp/.X11-unix                 \
+                   -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+                   --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted   \
+                   --mount type=bind,src=${PROJECTS_PATH},dst=/projects              \
+                   --mount type=bind,src=${XILINX_INSTALL_DIR},dst=/xilinx_install_dir \
+                   --rm --cpu-shares=${CPU_SHARES}                  \
+                   --cpus=6                                         \
+                   --name ${CONTAINER_NAME}                         \
+                   ${IMAGE_NAME}
 
 }
 
@@ -94,11 +104,34 @@ function add_ws_tester () {
 
 function add_vivado () {
 
-    # Allow root@dkr to make windows in local user's window manager
-    xhost +
-    docker exec -it -u0 -w           \
-           /vivado_extracted         \
-           ${CONTAINER_NAME} xsetup
+    # We check to determine if we need to do this, and we don't check
+    # other steps such as add_ws_tester because the vivado
+    # installation is not kept within the container, and ws_tester is
+    # kept in the container. So, if this is a new build, which is the
+    # use case, then we can correctly assume that ws_tester is not
+    # installed. However, the vivado install is kept as data on an
+    # external drive, because it's huge etc. That means it can persist
+    # between builds of the docker image, thus we check if it's
+    # already installed.
+    if [ ! -e /mnt/BACKUP/xilinx_docker_installs/Vivado/2022.2/settings64.sh ]
+    then
+
+        # Allow root@dkr to make windows in local user's window manager
+        xhost +
+        docker exec -it -w               \
+               /vivado_extracted         \
+               ${CONTAINER_NAME} ./xsetup
+
+    else
+
+        echo
+        cat <<EOF
+It appears that Vivado 2022.2 may already be installed
+because ${XILINX_INSTALLS_DIR}/Vivado/2022.2/settings64.sh
+exists. Skipping the installation of Vivado.
+EOF
+
+    fi
 
 }
 
@@ -111,10 +144,12 @@ function add_rcfiles () {
 
 }
 
+#######################################################################
+#######################################################################
 
-#
+# Begin Main Execution
 build_image
 run_container host
-add_ws_tester
-#add_vivado
 add_rcfiles
+add_ws_tester
+add_vivado
