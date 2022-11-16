@@ -47,3 +47,6 @@ alias gc='git commit'
 alias gl='git log --raw'
 
 alias xt='xterm -fa \"Monospace\" -fs 14'
+
+# run the bd alias to setup bus defender
+bd

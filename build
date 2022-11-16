@@ -9,7 +9,7 @@
 set -e
 
 NETWORK="none"
-
+HOSTNAME="dkr-2022"
 IMAGE_NAME="test:002"
 CONTAINER_NAME="test-002-${NETWORK}"
 
@@ -66,7 +66,7 @@ function run_container () {
 
         # Run the image / create container
         # -v /home:/home                                        \
-            docker run -itd --hostname=dkr --env DISPLAY=:0.0       \
+            docker run -itd --hostname=${HOSTNAME} --env DISPLAY=:0.0 \
                    --privileged                                     \
                    --network=${NETWORK}                             \
                    -e HOME=${HOME} -w ${HOME}                       \
@@ -79,26 +79,6 @@ function run_container () {
                    --cpus=6                                         \
                    --name ${CONTAINER_NAME}                         \
                    ${IMAGE_NAME}
-
-}
-
-# Be careful of modding this function because it has to play nice with
-# the ws_tester section in the Dockerfile
-function add_ws_tester () {
-
-    # Copy files from the local machines file system into the docker
-    # container
-    docker cp ${HC_ATTACK_ZIP}         ${CONTAINER_NAME}:/ws_tester/
-    docker cp ${TESTING_FRAMEWORK_ZIP} ${CONTAINER_NAME}:/ws_tester/
-
-    # Unzip the repos
-    docker exec -it -w /ws_tester ${CONTAINER_NAME} unzip *zip
-
-    # Install hc-attack
-    docker exec -it -w /ws_tester/hc-attack-hardcider-2018 ${CONTAINER_NAME} python3.8 -m pip install --user .
-
-    # Install testing-framework
-    docker exec -it -w /ws_tester/testing-framework-master ${CONTAINER_NAME} python3.8 -m pip install --user .
 
 }
 
@@ -135,21 +115,10 @@ EOF
 
 }
 
-function add_rcfiles () {
-
-    docker exec -it ${CONTAINER_NAME} bash -c '
-            git clone https://github.com/ad0rx/rcfiles.git;
-            for f in .bashrc .screenrc ; do ln -vfs rcfiles/$f $f; done;
-            pwd'
-
-}
-
 #######################################################################
 #######################################################################
 
 # Begin Main Execution
 build_image
-run_container host
-add_rcfiles
-add_ws_tester
+run_container
 add_vivado

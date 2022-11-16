@@ -130,7 +130,18 @@ RUN python3.8 -m pip install --upgrade pip && \
     python3.8 -m pip install --upgrade        \
     cython pybind11 scipy numpy
 
+USER $UNAME
+COPY support/hc-attack-hardcider-2018.zip /ws_tester/
+COPY support/testing-framework-master.zip /ws_tester/
+WORKDIR /ws_tester
+RUN unzip hc-attack-hardcider-2018.zip && \
+    unzip testing-framework-master.zip
 
+WORKDIR /ws_tester/hc-attack-hardcider-2018
+RUN python3.8 -m pip install --user .
+
+WORKDIR /ws_tester/testing-framework-master
+RUN python3.8 -m pip install --user .
 
 # End ws_tester support ###############################################
 
