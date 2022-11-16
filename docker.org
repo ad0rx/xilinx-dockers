@@ -122,7 +122,7 @@ when ready to disconnect, in xterm window
 
     - Xilinx Information Center
 
-** TODO Autoinstall ws_tester
+** DONE Autoinstall ws_tester
     SCHEDULED: <2022-11-15 Tue>
 
     - hc_attack
@@ -132,7 +132,7 @@ when ready to disconnect, in xterm window
     - How to mount local share during image build?
       -
 
-** TODO Autoinstall Vivado
+** DONE Autoinstall Vivado
     SCHEDULED: <2022-11-15 Tue>
 
     - need automation files
