@@ -14,8 +14,8 @@ GIT_EMAIL="bradley.whitlock@peraton.com"
 
 NETWORK="none"
 HOSTNAME="dkr-2022"
-IMAGE_NAME="vivado-2022.2:001"
-CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g)"
+IMAGE_NAME="vivado/2022.2:001"
+CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
 
 # ws_tester support
 HC_ATTACK_ZIP="/home/brad/Downloads/hc-attack-hardcider-2018.zip"
