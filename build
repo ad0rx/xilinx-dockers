@@ -8,10 +8,14 @@
 # Exit on error
 set -e
 
+# Name and Email used for git config
+GIT_NAME="Brad Whitlock"
+GIT_EMAIL="bradley.whitlock@peraton.com"
+
 NETWORK="none"
 HOSTNAME="dkr-2022"
-IMAGE_NAME="test:002"
-CONTAINER_NAME="test-002-${NETWORK}"
+IMAGE_NAME="vivado-2022.2:001"
+CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g)"
 
 # ws_tester support
 HC_ATTACK_ZIP="/home/brad/Downloads/hc-attack-hardcider-2018.zip"
@@ -34,9 +38,11 @@ function build_image () {
                    docker build             \
                    --tag ${IMAGE_NAME}      \
                    --build-arg UNAME=$USER  \
-                   --ssh default            \
+                   --build-arg GIT_NAME="$GIT_NAME" \
+                   --build-arg GIT_EMAIL=$GIT_EMAIL \
                    --build-arg UID=$(id -u) \
                    --build-arg GID=$(id -g) \
+                   --ssh default            \
                    -f Dockerfile .
 
 }
@@ -72,11 +78,11 @@ function run_container () {
                    -e HOME=${HOME} -w ${HOME}                       \
                    -v /tmp/.X11-unix:/tmp/.X11-unix                 \
                    -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
-                   --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted   \
-                   --mount type=bind,src=${PROJECTS_PATH},dst=/projects              \
+                   --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted     \
+                   --mount type=bind,src=${PROJECTS_PATH},dst=/projects                \
                    --mount type=bind,src=${XILINX_INSTALL_DIR},dst=/xilinx_install_dir \
                    --rm --cpu-shares=${CPU_SHARES}                  \
-                   --cpus=6                                         \
+                   --cpus=4                                         \
                    --name ${CONTAINER_NAME}                         \
                    ${IMAGE_NAME}
 

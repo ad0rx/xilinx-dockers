@@ -40,7 +40,7 @@ ARG UID=1000
 ARG GID=1000
 
 ARG UHOME=/home/$UNAME
-#ENV LANG zh_TW.UTF-8
+
 RUN groupadd -g $GID -o $UNAME
 RUN useradd  -m -u $UID -g $GID -o -s /bin/bash $UNAME
 
@@ -121,7 +121,6 @@ RUN apt-get update &&     \
 RUN mkdir -p /ws_tester && \
     chown -R $UID:$GID /ws_tester
 
-# Set the username for running the following commands
 USER $UNAME
 ENV PATH $PATH:/home/$UNAME/.local/bin
 RUN python3.8 -m pip install --upgrade pip && \
@@ -149,7 +148,13 @@ USER root
 COPY support/bashrc /home/$UNAME/.bashrc
 RUN chown $UNAME:$UNAME /home/$UNAME/.bashrc
 
+
 USER $UNAME
+ARG GIT_EMAIL="user@default.com"
+ARG GIT_NAME="John Doe"
+RUN git config --global user.email  "$GIT_EMAIL" && \
+    git config --global user.name   "$GIT_NAME"  && \
+    git config --global core.editor nano
 
 # Set environment variables.
 ENV HOME $UHOME

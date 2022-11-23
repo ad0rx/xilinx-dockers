@@ -117,7 +117,7 @@ when ready to disconnect, in xterm window
 
 * Vivado 20222.2 Tasks
 
-** TODO Disable XIC
+** CANCELED Disable XIC
     SCHEDULED: <2022-11-15 Tue>
 
     - Xilinx Information Center
@@ -136,3 +136,8 @@ when ready to disconnect, in xterm window
     SCHEDULED: <2022-11-15 Tue>
 
     - need automation files
+* Docker Tasks
+** CANCELED GtkWave
+   SCHEDULED: <2022-11-23 Wed>
+   [2022-11-23 Wed]
+   [[file:~/Documents/orgs/peraton.org::*Do Next Cycle][Do Next Cycle]]

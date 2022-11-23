@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
-# run the Docker image for Vivado 2020.1
+# run the Docker image
+# Image is determined by local variable below
+#######################################################################
 
 # Exit on error
 set -e
@@ -8,6 +10,12 @@ set -e
 # Capture output here, which contains the container ID
 OUTFILE=/tmp/run.sh.out
 
+IMAGE="vivado-2022.2:001"
+CNAME="$(echo $IMAGE | sed s/:/-/g)"
+
+# With no args, you get no network. If you want network, give any arg
+# and you will get 'host' networking. This is mainly used to
+# experiment to determine what needs to be added to the Dockerfile
 NETWORK=none
 CPU_SHARES=1024
 if [ -n "$1" ]
@@ -21,22 +29,24 @@ then
 
 fi
 
+CNAME+="-${NETWORK}"
+
 # Run the image / create container
 #       -v "$HOME/.Xauthority:/root/.Xauthority:rw"                   \
 #       -v /tmp/.X11-unix:/tmp/.X11-unix -v /home:/home --rm          \
 #       --network=host                                                \
 #       --expose 22                                                   \
-docker run -itd --hostname=dkr --env DISPLAY=:0.0                    \
-       --privileged                                                  \
-       --network=${NETWORK}                                          \
-       -e HOME=${HOME} -w ${HOME}                                    \
-       -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw"              \
-       -v /tmp/.X11-unix:/tmp/.X11-unix                              \
-       -v /home:/home                                                \
-       --rm --cpu-shares=${CPU_SHARES}                               \
-       --cpus=6                                                      \
-       --name vivado-2020.1-${NETWORK}                               \
-       vivado/2020.1:009 | tee ${OUTFILE}
+docker run -itd --hostname=dkr --env DISPLAY=:0.0       \
+       --privileged                                     \
+       --network=${NETWORK}                             \
+       -e HOME=${HOME} -w ${HOME}                       \
+       -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+       -v /tmp/.X11-unix:/tmp/.X11-unix                 \
+       -v /home:/home                                   \
+       --rm --cpu-shares=${CPU_SHARES}                  \
+       --cpus=4                                         \
+       --name "${CNAME}"                                \
+       "${IMAGE}" | tee ${OUTFILE}
 
 ID=`cat ${OUTFILE}`
 
