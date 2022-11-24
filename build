@@ -8,13 +8,18 @@
 # Exit on error
 set -e
 
+LOG=${HOME}/00_docker_build
+DOCKER=/usr/bin/docker
+
 # Name and Email used for git config
 GIT_NAME="Brad Whitlock"
 GIT_EMAIL="bradley.whitlock@peraton.com"
 
 NETWORK="none"
 HOSTNAME="dkr-2022"
-IMAGE_NAME="vivado/2022.2:001"
+IMAGE_ROOT="vivado/2022.2"
+IMAGE_VERSION="001"
+IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
 CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
 
 # ws_tester support
@@ -33,17 +38,20 @@ PROJECTS_PATH="/home/brad/projects"
 
 function build_image () {
 
+    local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" \
+                  &> /dev/null && pwd )
+    cd ${script_dir}
+
     # Build the image
     DOCKER_BUILDKIT=1                       \
-                   docker build             \
+                   $DOCKER build             \
                    --tag ${IMAGE_NAME}      \
                    --build-arg UNAME=$USER  \
                    --build-arg GIT_NAME="$GIT_NAME" \
                    --build-arg GIT_EMAIL=$GIT_EMAIL \
                    --build-arg UID=$(id -u) \
                    --build-arg GID=$(id -g) \
-                   --ssh default            \
-                   -f Dockerfile .
+                   -f Dockerfile . | tee ${LOG}
 
 }
 
@@ -72,7 +80,7 @@ function run_container () {
 
         # Run the image / create container
         # -v /home:/home                                        \
-            docker run -itd --hostname=${HOSTNAME} --env DISPLAY=:0.0 \
+            $DOCKER run -itd --hostname=${HOSTNAME} --env DISPLAY=:0.0 \
                    --privileged                                     \
                    --network=${NETWORK}                             \
                    -e HOME=${HOME} -w ${HOME}                       \
@@ -84,7 +92,7 @@ function run_container () {
                    --rm --cpu-shares=${CPU_SHARES}                  \
                    --cpus=4                                         \
                    --name ${CONTAINER_NAME}                         \
-                   ${IMAGE_NAME}
+                   ${IMAGE_NAME} | tee ${LOG}
 
 }
 
@@ -104,7 +112,7 @@ function add_vivado () {
 
         # Allow root@dkr to make windows in local user's window manager
         xhost +
-        docker exec -it -w               \
+        $DOCKER exec -it -w              \
                /vivado_extracted         \
                ${CONTAINER_NAME} ./xsetup
 
@@ -124,7 +132,28 @@ EOF
 #######################################################################
 #######################################################################
 
+function image_exists () {
+
+    local d=$($DOCKER image ls | \
+                  egrep "${IMAGE_ROOT}[ ]+${IMAGE_VERSION}" )
+
+    if [ -z "$d" ]
+    then
+        # we need to build
+        echo "0"
+    else
+        # image already exists
+        echo "1"
+    fi
+
+}
+
 # Begin Main Execution
-build_image
+if [ "$(image_exists)" -ne "1" ]
+then
+    echo "will build" | tee ${LOG}
+    build_image
+fi
+
 run_container
 add_vivado
