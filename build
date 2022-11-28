@@ -51,16 +51,13 @@ function build_image () {
                    --build-arg GIT_EMAIL=$GIT_EMAIL \
                    --build-arg UID=$(id -u) \
                    --build-arg GID=$(id -g) \
-                   -f Dockerfile . | tee ${LOG}
+                   -f Dockerfile . | tee -a ${LOG}
 
 }
 
 # if this script is invoked with any argument, you get network=host,
 # otherwise no network
 function run_container () {
-
-    # Capture output here, which contains the container ID
-    OUTFILE=/tmp/run.sh.test.out
 
     NETWORK=none
     CPU_SHARES=1024
@@ -75,8 +72,14 @@ function run_container () {
 
     fi
 
-    mkdir -p ${XILINX_INSTALL_DIR} &&
-        chmod -R 777 ${XILINX_INSTALL_DIR}
+    # This directory resides on the host; not within the container
+    if [ ! -e ${XILINX_INSTALL_DIR} ]
+    then
+        echo "Creating ${XILINX_INSTALL_DIR}" | tee -a ${LOG}
+        mkdir -p -mode=777 ${XILINX_INSTALL_DIR}
+    fi
+
+    echo "Starting Container" | tee -a ${LOG}
 
         # Run the image / create container
         # -v /home:/home                                        \
@@ -92,7 +95,7 @@ function run_container () {
                    --rm --cpu-shares=${CPU_SHARES}                  \
                    --cpus=4                                         \
                    --name ${CONTAINER_NAME}                         \
-                   ${IMAGE_NAME} | tee ${LOG}
+                   ${IMAGE_NAME} | tee -a ${LOG}
 
 }
 
@@ -148,10 +151,12 @@ function image_exists () {
 
 }
 
+echo "Running" | tee ${LOG}
+
 # Begin Main Execution
 if [ "$(image_exists)" -ne "1" ]
 then
-    echo "will build" | tee ${LOG}
+    echo "will build" | tee -a ${LOG}
     build_image
 fi
 
