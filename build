@@ -82,13 +82,14 @@ function run_container () {
     echo "Starting Container" | tee -a ${LOG}
 
         # Run the image / create container
-        # -v /home:/home                                        \
-            $DOCKER run -itd --hostname=${HOSTNAME} --env DISPLAY=:0.0 \
+# -v /home:/home                                   \
+# -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+            $DOCKER run -itd --hostname=${HOSTNAME} --env "DISPLAY" \
                    --privileged                                     \
                    --network=${NETWORK}                             \
                    -e HOME=${HOME} -w ${HOME}                       \
-                   -v /tmp/.X11-unix:/tmp/.X11-unix                 \
-                   -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+                   --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix \
+                   --mount type=bind,src=/home/brad/.Xauthority,dst=/home/brad/.Xauthority \
                    --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted     \
                    --mount type=bind,src=${PROJECTS_PATH},dst=/projects                \
                    --mount type=bind,src=${XILINX_INSTALL_DIR},dst=/xilinx_install_dir \
@@ -154,11 +155,6 @@ function image_exists () {
 echo "Running" | tee ${LOG}
 
 # Begin Main Execution
-if [ "$(image_exists)" -ne "1" ]
-then
-    echo "will build" | tee -a ${LOG}
-    build_image
-fi
-
+build_image
 run_container
 add_vivado
