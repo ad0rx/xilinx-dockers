@@ -30,7 +30,8 @@ TESTING_FRAMEWORK_ZIP="/home/brad/Downloads/testing-framework-master.zip"
 # This path will be mounted to /vivado_extracted inside the container
 VIVADO_EXTRACTED="/mnt/BACKUP/archive/xilinx/Xilinx_Unified_2022.2_1014_8888"
 
-XILINX_INSTALL_DIR="/mnt/BACKUP/xilinx_docker_installs"
+#XILINX_INSTALL_DIR="/mnt/BACKUP/xilinx_docker_installs"
+XILINX_INSTALL_DIR="/xilinx_docker_installs"
 
 # Path on local machine to where projects root. Will be mounted to
 # /projects in container
@@ -77,6 +78,8 @@ function run_container () {
     then
         echo "Creating ${XILINX_INSTALL_DIR}" | tee -a ${LOG}
         mkdir -p -mode=777 ${XILINX_INSTALL_DIR}
+        chown -R ${USER}:docker ${XILINX_INSTALL_DIR}
+        chmod g+s ${XILINX_INSTALL_DIR}
     fi
 
     echo "Starting Container" | tee -a ${LOG}
