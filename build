@@ -18,7 +18,7 @@ GIT_EMAIL="bradley.whitlock@peraton.com"
 NETWORK="none"
 HOSTNAME="dkr-2022"
 IMAGE_ROOT="vivado/2022.2"
-IMAGE_VERSION="001"
+IMAGE_VERSION="002"
 IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
 CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
 
@@ -30,7 +30,7 @@ TESTING_FRAMEWORK_ZIP="/home/brad/Downloads/testing-framework-master.zip"
 # This path will be mounted to /vivado_extracted inside the container
 VIVADO_EXTRACTED="/mnt/BACKUP/archive/xilinx/Xilinx_Unified_2022.2_1014_8888"
 
-#XILINX_INSTALL_DIR="/mnt/BACKUP/xilinx_docker_installs"
+# Dir on the host. Mapped to /xilinx_install_dir in the container
 XILINX_INSTALL_DIR="/xilinx_docker_installs"
 
 # Path on local machine to where projects root. Will be mounted to
@@ -93,9 +93,9 @@ function run_container () {
                    -e HOME=${HOME} -w ${HOME}                       \
                    --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix \
                    --mount type=bind,src=/home/brad/.Xauthority,dst=/home/brad/.Xauthority \
-                   --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted     \
                    --mount type=bind,src=${PROJECTS_PATH},dst=/projects                \
                    --mount type=bind,src=${XILINX_INSTALL_DIR},dst=/xilinx_install_dir \
+                   --mount type=bind,src=${VIVADO_EXTRACTED},dst=/vivado_extracted     \
                    --rm --cpu-shares=${CPU_SHARES}                  \
                    --cpus=4                                         \
                    --name ${CONTAINER_NAME}                         \
@@ -114,7 +114,7 @@ function add_vivado () {
     # external drive, because it's huge etc. That means it can persist
     # between builds of the docker image, thus we check if it's
     # already installed.
-    if [ ! -e /mnt/BACKUP/xilinx_docker_installs/Vivado/2022.2/settings64.sh ]
+    if [ ! -e ${XILINX_INSTALL_DIR}/Vivado/2022.2/settings64.sh ]
     then
 
         # Allow root@dkr to make windows in local user's window manager
