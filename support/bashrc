@@ -1,3 +1,4 @@
+# -*- mode: sh -*-
 # .bashrc
 
 #export HOME=/home/bwhitlock/03_peraton_laptop
@@ -37,9 +38,9 @@ alias screen='screen -h 10000 -D -R'
 
 alias bd='source /projects/bus_defender/bus_defender_env'
 
-alias pws='pushd ${PWS}'
-alias pd='popd'
-alias cd='pushd'
+#alias pws='pushd ${PWS} > /dev/null'
+alias pd='popd > /dev/null'
+alias cd='pushd > /dev/null'
 alias pa='while popd -n; do next; done &> /dev/null'
 
 alias gs='git status'
