@@ -7,6 +7,11 @@
 # Used Perl Dockerfile as example:
 # https://github.com/perl/docker-perl/blob/\
 #    f70e8ace49994efef8e90cbf730554a3e3201da7/5.036.000-main-bullseye/Dockerfile
+#
+# When updating this file, remember that lines that are added
+# invalidate all following lines, necessitating a new build instead of
+# using the existing image archive. Therefore, try to add new things
+# toward the bottom of this file.
 #######################################################################
 
 # Pull base image.
@@ -32,14 +37,6 @@ RUN true                                                                        
     && apt-get install -y -q
 
 # End Base Updates ####################################################
-
-# Begin personal deps
-RUN true                            \
-    && apt-get update               \
-    && apt-get -y upgrade           \
-    && apt-get install -y           \
-               rsync
-# End personal deps
 
 # Begin deps for Xilinx Vivado
 RUN true \
@@ -131,10 +128,17 @@ RUN python3.8 -m pip install --user .
 
 # End ws_tester support ###############################################
 
+# Begin personal deps #################################################
+RUN true                            \
+    && apt-get update               \
+    && apt-get -y upgrade           \
+    && apt-get install -y           \
+               rsync
+# End personal deps ###################################################
+
 USER root
 COPY support/bashrc /home/$UNAME/.bashrc
 RUN chown $UNAME:$UNAME /home/$UNAME/.bashrc
-
 
 # Set to actual user name in the build command in 'build'
 USER $UNAME
