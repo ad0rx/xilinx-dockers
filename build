@@ -18,7 +18,7 @@ GIT_EMAIL="bradley.whitlock@peraton.com"
 NETWORK="none"
 HOSTNAME="dkr-2022"
 IMAGE_ROOT="vivado/2022.2"
-IMAGE_VERSION="002"
+IMAGE_VERSION="003"
 IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
 CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
 
@@ -159,5 +159,5 @@ echo "Running" | tee ${LOG}
 
 # Begin Main Execution
 build_image
-run_container
+run_container with_networking
 add_vivado

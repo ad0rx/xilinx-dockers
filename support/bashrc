@@ -5,9 +5,20 @@
 
 # Disable bash_completion because of bug with variable expansion
 shopt -u progcomp
-export PROJ="none"
-export PS1="\n\[\e[1;34m\][\$PROJ]\n\[\e[0m\]\[\e[1;31m\][\w]\[\e[0m\]\n[\h] \$> "
-export PATH=${HOME}/scripts:~/.local/bin:${PATH}
+export BW_PROJ="none"
+export BW_WS="none"
+
+# When using Tramp and Emacs, there is an issue with using the prompt above
+# So only put it into effect after setting a project
+#HAPPY_PROMPT="\n\[\e[1;34m\][\$BW_PROJ]\n\[\e[0m\]\[\e[1;31m\][\w]\[\e[0m\]\n[\h] \$> "
+HAPPY_PROMPT="\n\[\e[1;34m\][\$BW_WS]\n\[\e[0m\]\[\e[1;31m\][\w]\[\e[0m\]\n[\h] \$> "
+export PS1=$HAPPY_PROMPT
+
+# Fix a bug with Emacs Tramp
+if [[ $TERM == "dumb" ]]; then
+    export PS1="$ "
+fi
+export PATH=${HOME}/scripts:${PATH}
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -38,7 +49,6 @@ alias screen='screen -h 10000 -D -R'
 
 alias bd='source /projects/bus_defender/bus_defender_env'
 
-#alias pws='pushd ${PWS} > /dev/null'
 alias pd='popd > /dev/null'
 alias cd='pushd > /dev/null'
 alias pa='while popd -n; do next; done &> /dev/null'

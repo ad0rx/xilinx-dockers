@@ -33,6 +33,14 @@ RUN true                                                                        
 
 # End Base Updates ####################################################
 
+# Begin personal deps
+RUN true                            \
+    && apt-get update               \
+    && apt-get -y upgrade           \
+    && apt-get install -y           \
+               rsync
+# End personal deps
+
 # Begin deps for Xilinx Vivado
 RUN true \
     && apt-get update               \
