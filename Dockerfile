@@ -129,6 +129,7 @@ RUN python3.8 -m pip install --user .
 # End ws_tester support ###############################################
 
 # Begin personal deps #################################################
+USER root
 RUN true                            \
     && apt-get update               \
     && apt-get -y upgrade           \
