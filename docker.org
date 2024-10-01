@@ -1,5 +1,47 @@
 #+TITLE:Docker Notes
 
+* Overview
+
+This document explains the ideology behind the current Docker
+containers.
+
+* Xilinx Container
+
+Contains the full suite of Xilinx tools including Vivado, Vitis,
+DocNav etc.
+
+* PetaLinux Container
+
+Contains the PetaLinux build tools.
+
+* Building of Image
+
+There is a build script which wraps various Docker commands and
+results in a running container with the tools installed and a working
+environment setup. They are intended to be exec'd into by the end
+user.
+
+* Volumes
+
+The installation files are stored in long-term storage on the host
+machine. This long-term storage is mounted as a volume in the
+container as needed. The tools are then installed to another volume
+which is on the host. In this way, the tools are NOT installed inside
+the container. This makes modifying and maintaining containers MUCH
+more efficient because you don't have to re-install the tools when
+making minor changes to the container's environment. This also reduces
+the size of the image significantly.
+
+** Xilinx Extracted
+
+Host      : /mnt/BACKUP/archive/xilinx
+Container : /vivado_extracted
+
+** Xilinx Install DIR
+
+Host      : /xilinx_docker_installs
+Container : /xilinx_install_dir
+
 * Commands
 
 ** Commit
@@ -137,7 +179,3 @@ when ready to disconnect, in xterm window
 
     - need automation files
 * Docker Tasks
-** CANCELED GtkWave
-   SCHEDULED: <2022-11-23 Wed>
-   [2022-11-23 Wed]
-   [[file:~/Documents/orgs/peraton.org::*Do Next Cycle][Do Next Cycle]]

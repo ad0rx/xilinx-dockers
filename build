@@ -16,8 +16,8 @@ GIT_NAME="Brad Whitlock"
 GIT_EMAIL="bradley.whitlock@peraton.com"
 
 NETWORK="none"
-HOSTNAME="dkr-2022"
-IMAGE_ROOT="vivado/2022.2"
+HOSTNAME="xil-22_2"
+IMAGE_ROOT="xilinx/2022.2"
 IMAGE_VERSION="003"
 IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
 CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
@@ -44,14 +44,14 @@ function build_image () {
     cd ${script_dir}
 
     # Build the image
-    DOCKER_BUILDKIT=1                       \
-                   $DOCKER build             \
-                   --tag ${IMAGE_NAME}      \
-                   --build-arg UNAME=$USER  \
+    DOCKER_BUILDKIT=1                               \
+                   $DOCKER build                    \
+                   --tag ${IMAGE_NAME}              \
+                   --build-arg UNAME=$USER          \
                    --build-arg GIT_NAME="$GIT_NAME" \
                    --build-arg GIT_EMAIL=$GIT_EMAIL \
-                   --build-arg UID=$(id -u) \
-                   --build-arg GID=$(id -g) \
+                   --build-arg UID=$(id -u)         \
+                   --build-arg GID=$(id -g)         \
                    -f Dockerfile . | tee -a ${LOG}
 
 }

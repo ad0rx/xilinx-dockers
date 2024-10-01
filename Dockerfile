@@ -75,6 +75,7 @@ RUN true \
             wget                    \
             unzip                   \
             locales                 \
+            gdb                     \
     && locale-gen en_US.UTF-8       \
     && rm -rf /var/lib/apt/lists/*
 

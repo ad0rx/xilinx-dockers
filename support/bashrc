@@ -53,7 +53,7 @@ alias pd='popd > /dev/null'
 alias cd='pushd > /dev/null'
 alias pa='while popd -n; do next; done &> /dev/null'
 
-alias gs='git status'
+alias gs='git status -u  --ignored'
 alias gc='git commit'
 alias gl='git log --raw'
 
