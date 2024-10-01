@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+#
+# New flow for building the base image for Bus Defender. You end up
+# with a running container which has ws_tester.py installed and is
+# runnable.
+#######################################################################
+
+# Exit on error
+set -e
+
+#LOG=${HOME}/00_docker_build
+LOG=00_docker_build
+DOCKER=/usr/bin/docker
+
+# Name and Email used for git config
+GIT_NAME="Brad Whitlock"
+GIT_EMAIL="bradley.whitlock@peraton.com"
+
+NETWORK="none"
+HOSTNAME="plnx-22_2"
+IMAGE_ROOT="petalinux/2022.2"
+IMAGE_VERSION="001"
+IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
+CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
+
+# Path on local machine to the extracted vivado unified installer
+# This path will be mounted to /vivado_extracted inside the container
+XILINX_EXTRACTED="/mnt/BACKUP/archive/xilinx"
+
+# Dir on the host. Mapped to /xilinx_install_dir in the container
+XILINX_INSTALL_DIR="/xilinx_docker_installs"
+
+# Path on local machine to where projects root. Will be mounted to
+# /projects in container
+PROJECTS_PATH="/home/brad/projects"
+
+function build_image () {
+
+    local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" \
+                  &> /dev/null && pwd )
+    cd ${script_dir}
+
+    # Build the image
+    DOCKER_BUILDKIT=1                       \
+                   $DOCKER build             \
+                   --tag ${IMAGE_NAME}      \
+                   --build-arg UNAME=$USER  \
+                   --build-arg GIT_NAME="$GIT_NAME" \
+                   --build-arg GIT_EMAIL=$GIT_EMAIL \
+                   --build-arg UID=$(id -u) \
+                   --build-arg GID=$(id -g) \
+                   -f Dockerfile . | tee -a ${LOG}
+
+}
+
+# if this script is invoked with any argument, you get network=host,
+# otherwise no network
+function run_container () {
+
+    NETWORK=none
+    CPU_SHARES=1024
+    if [ -n "$1" ]
+    then
+
+        NETWORK=host
+        echo "Setting NETWORK=$NETWORK"
+
+        #CPU_SHARES=128
+        #echo "Setting CPU_SHARES=$CPU_SHARES"
+
+    fi
+
+#    # This directory resides on the host; not within the container
+#    if [ ! -e ${XILINX_INSTALL_DIR} ]
+#    then
+#        echo "Creating ${XILINX_INSTALL_DIR}" | tee -a ${LOG}
+#        mkdir -p -mode=777 ${XILINX_INSTALL_DIR}
+#        chown -R ${USER}:docker ${XILINX_INSTALL_DIR}
+#        chmod g+s ${XILINX_INSTALL_DIR}
+#    fi
+
+    echo "Starting Container" | tee -a ${LOG}
+
+        # Run the image / create container
+# -v /home:/home                                   \
+    # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+            $DOCKER run -itd --hostname=${HOSTNAME} --env "DISPLAY" \
+                   --privileged                                     \
+                   --network=${NETWORK}                             \
+                   -e HOME=${HOME} -w ${HOME}                       \
+                   --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix \
+                   --mount type=bind,src=/home/brad/.Xauthority,dst=/home/brad/.Xauthority \
+                   --mount type=bind,src=${PROJECTS_PATH},dst=/projects                    \
+                   --mount type=bind,src=${XILINX_EXTRACTED},dst=/xilinx_downloads         \
+                   --mount type=bind,src=${XILINX_INSTALL_DIR},dst=/xilinx_install_dir     \
+                   --mount type=bind,src=/tftpboot,dst=/tftpboot                           \
+                   --expose 69                                      \
+                   --rm --cpu-shares=${CPU_SHARES}                  \
+                   --cpus=4                                         \
+                   --name ${CONTAINER_NAME}                         \
+                   ${IMAGE_NAME} | tee -a ${LOG}
+
+            # Start the tftpd server (hack)
+            docker exec -u root -it ${CONTAINER_NAME} service xinetd restart
+}
+
+#######################################################################
+#######################################################################
+
+function image_exists () {
+
+    local d=$($DOCKER image ls | \
+                  egrep "${IMAGE_ROOT}[ ]+${IMAGE_VERSION}" )
+
+    if [ -z "$d" ]
+    then
+        # we need to build
+        echo "0"
+    else
+        # image already exists
+        echo "1"
+    fi
+
+}
+
+function add_petalinux () {
+
+    if [ ! -e ${XILINX_INSTALL_DIR}/petalinux-22.2/settings.sh ]
+    then
+
+        # Allow root@dkr to make windows in local user's window manager
+        xhost +
+        $DOCKER exec -it -w              \
+               /xilinx_downloads         \
+               ${CONTAINER_NAME}         \
+               ./petalinux-v2022.2-10141622-installer.run \
+               -d /xilinx_install_dir/petalinux-22.2
+
+    else
+
+        echo
+        cat <<EOF
+It appears that PetaLinux 2022.2 may already be installed
+because ${XILINX_INSTALL_DIR}/petalinux-22.2/settings.sh
+exists. Skipping the installation of Vivado.
+EOF
+
+    fi
+
+}
+
+echo "Running" | tee ${LOG}
+
+# Begin Main Execution
+build_image
+run_container with_networking
+add_petalinux
