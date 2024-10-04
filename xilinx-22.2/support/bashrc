@@ -48,6 +48,7 @@ alias screen='screen -h 10000 -D -R'
 #alias minicom='sudo minicom -D /dev/ttyUSB1'
 
 alias bd='source /projects/bus_defender/bus_defender_env'
+alias mcdma='source /projects/mcdma/mcdma_env'
 
 alias pd='popd > /dev/null'
 alias cd='pushd > /dev/null'
@@ -59,5 +60,8 @@ alias gl='git log --raw'
 
 alias xt='xterm -fa \"Monospace\" -fs 14'
 
+export VIVADO_ENV=/xilinx_install_dir/Vivado/2022.2/settings64.sh
+source $VIVADO_ENV
+
 # run the bd alias to setup bus defender
-bd
+# bd
