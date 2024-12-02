@@ -37,106 +37,38 @@ RUN true \
 
 # End Base Updates ####################################################
 
-# Begin PetaLinux Dependencies ########################################
-# RUN true \
-#     && apt-get update                  \
-#     && apt-get -y upgrade              \
-#     && apt-get install -y              \
-#                zlib1g:i386             \
-#                zlib1g-dev:i386         \
-#                iproute2                \
-#                gawk                    \
-#                gcc                     \
-#                net-tools               \
-#                ncurses-dev             \
-#                zlib1g-dev              \
-#                openssl                 \
-#                flex                    \
-#                bison                   \
-#                xterm                   \
-#                bc                      \
-#                autoconf                \
-#                libtool                 \
-#                texinfo                 \
-#                gcc-multilib            \
-#                build-essential         \
-#                automake                \
-#                screen                  \
-#                pax                     \
-#                libstdc++-9-dev         \
-#                g++-9                   \
-#                python3-pip             \
-#                xz-utils                \
-#                zlib1g-dev              \
-#                cpp                     \
-#                python3-git             \
-#                python3-jinja2          \
-#                python3-pexpect         \
-#                diffutils               \
-#                debianutils             \
-#                iputils-ping            \
-#                libegl1-mesa            \
-#                libsdl1.2-dev           \
-#                pylint3                 \
-#                python3                 \
-#                cpio                    \
-#                gnupg                   \
-#                netstat-nat             \
-#                git                     \
-#                python                  \
-#                git                     \
-#                make                    \
-#                libncurses5-dev         \
-#                tftpd                   \
-#                tftp                    \
-#                libssl-dev              \
-#                libselinux1             \
-#                libtinfo5               \
-#                wget                    \
-#                git-core                \
-#                diffstat                \
-#                chrpath                 \
-#                socat                   \
-#                tar                     \
-#                unzip                   \
-#                gcc-multilib            \
-#                screen                  \
-#                pax                     \
-#                gzip                    \
-#                locales                 \
-#                xxd                     \
-#     && locale-gen en_US.UTF-8          \
-#     && rm -rf /var/lib/apt/lists/*
-# END Petalinux Dependencies ##########################################
-
-# Begin personal deps #################################################
+# Begin deps ##########################################################
 USER root
 RUN true                            \
     && apt-get update               \
     && apt-get -y upgrade           \
     && apt-get install -y           \
                nano                 \
-               rsync
-# End personal deps ###################################################
+               rsync                \
+               cron                 \
+               wget                 \
+               systemctl            \
+               curl                 \
+               gpg                  \
+               wireless-tools
+
+# End deps ############################################################
 
 USER root
 COPY support/bashrc /home/$UNAME/.bashrc
 RUN chown $UNAME:$UNAME /home/$UNAME/.bashrc
+
+# Add the Peraton Labs IT tools
+COPY support/plabs-ubuntu-addons.sh /home/$UNAME/
+RUN chmod +x /home/$UNAME/plabs-ubuntu-addons.sh
+RUN chown $UNAME:$UNAME /home/$UNAME/plabs-ubuntu-addons.sh
 
 # Make default shell bash
 RUN echo "dash dash/sh boolean false" | debconf-set-selections
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
 #######################################################################
-
-# Set to actual user name in the build command in 'build'
 USER $UNAME
-ARG GIT_EMAIL="user@default.com"
-ARG GIT_NAME="John Doe"
-RUN true                                            \
-    && git config --global user.email  "$GIT_EMAIL" \
-    && git config --global user.name   "$GIT_NAME"  \
-    && git config --global core.editor nano
 
 # Set environment variables.
 ENV HOME $UHOME

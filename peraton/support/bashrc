@@ -27,7 +27,7 @@ fi
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
-export EDITOR=emacs
+export EDITOR=nano
 
 # Unlimited history
 HISTSIZE=-1
@@ -59,6 +59,3 @@ alias gc='git commit'
 alias gl='git log --raw'
 
 alias xt='xterm -fa \"Monospace\" -fs 14'
-
-export PLNX_ENV=/xilinx_install_dir/petalinux-22.2/settings.sh
-source $PLNX_ENV

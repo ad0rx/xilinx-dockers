@@ -5,7 +5,7 @@
 # Exit on error
 set -e
 
-#LOG=${HOME}/00_docker_build
+DUSER=bwhitlock
 LOG=00_docker_build
 DOCKER=/usr/bin/docker
 
@@ -31,21 +31,21 @@ CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
 # /projects in container
 #PROJECTS_PATH="/home/brad/projects"
 
-function build_image () {
+function build_base () {
 
     local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" \
                   &> /dev/null && pwd )
     cd ${script_dir}
 
     # Build the image
-    DOCKER_BUILDKIT=1                       \
-                   $DOCKER build             \
-                   --tag ${IMAGE_NAME}      \
-                   --build-arg UNAME=$USER  \
+    DOCKER_BUILDKIT=1                               \
+                   $DOCKER build                    \
+                   --tag ${IMAGE_NAME}              \
+                   --build-arg UNAME=$DUSER         \
                    --build-arg GIT_NAME="$GIT_NAME" \
                    --build-arg GIT_EMAIL=$GIT_EMAIL \
-                   --build-arg UID=$(id -u) \
-                   --build-arg GID=$(id -g) \
+                   --build-arg UID=$(id -u)         \
+                   --build-arg GID=$(id -g)         \
                    -f Dockerfile . | tee -a ${LOG}
 
 }
@@ -71,17 +71,36 @@ function run_container () {
 
     # Run the image / create container
     # -v /home:/home                                   \
-    # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
-    $DOCKER run -itd --hostname=${HOSTNAME} --env "DISPLAY" \
-            --privileged                                     \
-            --network=${NETWORK}                             \
-            -e HOME=${HOME} -w ${HOME}                       \
-            --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix \
-            --mount type=bind,src=/home/brad/.Xauthority,dst=/home/brad/.Xauthority \
-            --rm --cpu-shares=${CPU_SHARES}                  \
-            --cpus=4                                         \
-            --name ${CONTAINER_NAME}                         \
+        # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+        HOME=/home/$DUSER
+    $DOCKER run -itd --hostname=${HOSTNAME} --env "DISPLAY"                           \
+            --privileged                                                              \
+            --network=${NETWORK}                                                      \
+            -e HOME=${HOME} -w ${HOME}                                                \
+            --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix                   \
+            --mount type=bind,src=/home/brad/.Xauthority,dst=/home/$DUSER/.Xauthority \
+            --rm --cpu-shares=${CPU_SHARES}                                           \
+            --cpus=4                                                                  \
+            --name ${CONTAINER_NAME}                                                  \
             ${IMAGE_NAME} | tee -a ${LOG}
+
+}
+
+post_installs () {
+
+    # Install the plabs IT tools
+    docker exec -it -u root ${CONTAINER_NAME} /home/${DUSER}/plabs-ubuntu-addons.sh
+
+    # Start cron
+    docker exec -i -u root ${CONTAINER_NAME} service cron start
+
+}
+
+commit_container () {
+
+    echo "Committing the container"
+    echo "${CONTAINTER_NAME} ${IMAGE_NAME}"
+    docker commit --message "ready for use" ${CONTAINER_NAME} ${IMAGE_NAME}
 
 }
 
@@ -106,6 +125,12 @@ function image_exists () {
 
 echo "Running" | tee ${LOG}
 
-# Begin Main Execution
-build_image
+# Do the following to build the image:
+#build_base
+#run_container with_networking
+#post_installs
+#commit_container
+
+# Once the tools have been installed and in the normal use case, run
+# the existing image
 run_container with_networking
