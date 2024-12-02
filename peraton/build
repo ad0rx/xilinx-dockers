@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# This image is for Peraton's IT happiness
+#######################################################################
+# Exit on error
+set -e
+
+#LOG=${HOME}/00_docker_build
+LOG=00_docker_build
+DOCKER=/usr/bin/docker
+
+# Name and Email used for git config
+GIT_NAME="Brad Whitlock"
+GIT_EMAIL="bradley.whitlock@peraton.com"
+
+NETWORK="none"
+HOSTNAME="peraton"
+IMAGE_ROOT="peraton/2024"
+IMAGE_VERSION="001"
+IMAGE_NAME="${IMAGE_ROOT}:${IMAGE_VERSION}"
+CONTAINER_NAME="$(echo $IMAGE_NAME | sed s/:/-/g | sed s!/!-!g)"
+
+# Path on local machine to the extracted vivado unified installer
+# This path will be mounted to /vivado_extracted inside the container
+#XILINX_EXTRACTED="/mnt/BACKUP/archive/xilinx"
+
+# Dir on the host. Mapped to /xilinx_install_dir in the container
+#XILINX_INSTALL_DIR="/xilinx_docker_installs"
+
+# Path on local machine to where projects root. Will be mounted to
+# /projects in container
+#PROJECTS_PATH="/home/brad/projects"
+
+function build_image () {
+
+    local script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" \
+                  &> /dev/null && pwd )
+    cd ${script_dir}
+
+    # Build the image
+    DOCKER_BUILDKIT=1                       \
+                   $DOCKER build             \
+                   --tag ${IMAGE_NAME}      \
+                   --build-arg UNAME=$USER  \
+                   --build-arg GIT_NAME="$GIT_NAME" \
+                   --build-arg GIT_EMAIL=$GIT_EMAIL \
+                   --build-arg UID=$(id -u) \
+                   --build-arg GID=$(id -g) \
+                   -f Dockerfile . | tee -a ${LOG}
+
+}
+
+# if this script is invoked with any argument, you get network=host,
+# otherwise no network
+function run_container () {
+
+    NETWORK=none
+    CPU_SHARES=1024
+    if [ -n "$1" ]
+    then
+
+        NETWORK=host
+        echo "Setting NETWORK=$NETWORK"
+
+        #CPU_SHARES=128
+        #echo "Setting CPU_SHARES=$CPU_SHARES"
+
+    fi
+
+    echo "Starting Container" | tee -a ${LOG}
+
+    # Run the image / create container
+    # -v /home:/home                                   \
+    # -v "${HOME}/.Xauthority:/${HOME}/.Xauthority:rw" \
+    $DOCKER run -itd --hostname=${HOSTNAME} --env "DISPLAY" \
+            --privileged                                     \
+            --network=${NETWORK}                             \
+            -e HOME=${HOME} -w ${HOME}                       \
+            --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix \
+            --mount type=bind,src=/home/brad/.Xauthority,dst=/home/brad/.Xauthority \
+            --rm --cpu-shares=${CPU_SHARES}                  \
+            --cpus=4                                         \
+            --name ${CONTAINER_NAME}                         \
+            ${IMAGE_NAME} | tee -a ${LOG}
+
+}
+
+#######################################################################
+#######################################################################
+
+function image_exists () {
+
+    local d=$($DOCKER image ls | \
+                  egrep "${IMAGE_ROOT}[ ]+${IMAGE_VERSION}" )
+
+    if [ -z "$d" ]
+    then
+        # we need to build
+        echo "0"
+    else
+        # image already exists
+        echo "1"
+    fi
+
+}
+
+echo "Running" | tee ${LOG}
+
+# Begin Main Execution
+build_image
+run_container with_networking

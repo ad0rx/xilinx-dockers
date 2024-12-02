@@ -5,12 +5,12 @@
 This document explains the ideology behind the current Docker
 containers.
 
-* Xilinx Container
+* Xilinx Docker
 
 Contains the full suite of Xilinx tools including Vivado, Vitis,
 DocNav etc.
 
-* PetaLinux Container
+* PetaLinux Docker
 
 Contains the PetaLinux build tools.
 
@@ -38,6 +38,10 @@ bootm
 
 tftpd is running inside the container
 had to add ufw rule to host to allow connections
+
+* Peraton Docker
+
+Created to host Peraton IT balony, we'll see if this scheme works
 
 * Building of Image
 
@@ -71,7 +75,6 @@ Container : /xilinx_install_dir
 
 Host      : /tftpboot
 Container : /tftpboot
-
 
 
 * Appendix
